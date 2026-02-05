@@ -1,0 +1,253 @@
+{
+  "name": "ChatBot Clima",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -448,
+        -48
+      ],
+      "id": "6068a202-1f5a-4e39-854e-6e917ed6bd2b",
+      "name": "Telegram Trigger",
+      "webhookId": "d4374de3-35fc-4702-8add-9fa74e1c3050",
+      "credentials": {
+        "telegramApi": {
+          "id": "UqKxBKsqGVMMlGoo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "68c7538b-2c21-4a2c-af63-9b18f92126d2",
+              "name": "queue",
+              "value": "={{ $json.message.text.toLowerCase().normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\")\n   .trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -240,
+        -48
+      ],
+      "id": "d50f3155-65b0-4311-9fe9-3f134e8c4e9b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "appid",
+              "value": "=1b5c62c7a32bc766155be368874e972c"
+            },
+            {
+              "name": "units",
+              "value": "metric"
+            },
+            {
+              "name": "lang",
+              "value": "pt_br"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.queue }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -32,
+        -48
+      ],
+      "id": "fdf06fbf-4295-48e9-8383-8a0128b5ac06",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "57eadfe6-4b5a-4567-900c-fdbcef94a5ef",
+              "leftValue": "={{ $json.cod }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        176,
+        -48
+      ],
+      "id": "ddec345b-cb0c-470a-a201-29002e60458f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "❌ Cidade não encontrada. Use o formato Cidade,UF (ex.: São Paulo,SP).",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        48
+      ],
+      "id": "9328135a-ee88-4e96-b3b6-7856fa644d75",
+      "name": "Send a text message",
+      "webhookId": "12f986db-a0bd-432e-a0e0-1d112a6f9c5d",
+      "credentials": {
+        "telegramApi": {
+          "id": "UqKxBKsqGVMMlGoo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=🌤️ A temperatura em {{ $('Edit Fields').item.json.queue }} é de {{ $json.main.temp.round() }} °C.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        -112
+      ],
+      "id": "f6928d4e-dc35-49f0-9a56-023d5a041bec",
+      "name": "Send a text message1",
+      "webhookId": "82e65c2d-b531-440e-8692-521a1669acb4",
+      "credentials": {
+        "telegramApi": {
+          "id": "UqKxBKsqGVMMlGoo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## WeatherBot\nEste projeto implementa um chatbot no Telegram que retorna a temperatura atual de qualquer cidade.\n",
+        "height": 480,
+        "width": 1712
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -784,
+        -208
+      ],
+      "id": "77000f79-d757-4353-91fb-27643aed2f28",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "814f50fa-e55d-4798-b1d3-fe4b5637641d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a91fe63433c0e6551719e32d44f2fb319c05313a5f9a8218f5d0fe426eaab482"
+  },
+  "id": "pBGa0-cIf2581I9mUiP-Y",
+  "tags": []
+}
