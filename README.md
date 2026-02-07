@@ -6,6 +6,28 @@ atual de qualquer cidade:
 -   **N8N**
 -   **Telegram Bot API** para interação com o usuário
 -   **OpenWeather API** para consultar o clima
+-   **Google Gemini** para refinar a mensagem final  
+
+------------------------------------------------------------------------
+
+
+## 📐 Visão geral do fluxo (arquitetura)
+
+O workflow segue o fluxo abaixo:
+
+1. **Telegram Trigger** – recebe a mensagem do usuário.  
+2. **Normalização de entrada (Edit Fields)** – limpa texto, remove acentos e padroniza a cidade.  
+3. **HTTP Request → OpenWeather** – consulta a API de clima.  
+4. **IF (validação 200)** – separa sucesso de erro.  
+5. **Function (fallback)** – monta a mensagem base.  
+6. **Google Gemini** – reescreve a mensagem de forma mais natural.  
+7. **Set (limpeza da saída do Gemini)** – converte o JSON retornado pelo Gemini para objeto utilizável.  
+8. **IF (validação do Gemini)** – decide entre resposta refinada ou fallback.  
+9. **Telegram Send Message** – envia a resposta final ao usuário.
+
+### Diagrama do seu workflow
+
+![Workflow do WeatherBot](workflow.png)
 
 ------------------------------------------------------------------------
 
@@ -18,14 +40,19 @@ O bot:
 -   Consulta a API OpenWeather
 -   Retorna a temperatura em °C
 -   Trata erros quando a cidade não é encontrada
+-   Melhora a resposta com Google Gemini
 
 **Exemplo de uso no Telegram:**
 
     Salvador,BA
 
-**Resposta esperada:**
+**Resposta esperada (sem Gemini):**
 
     🌤️ A temperatura em Salvador é de 25°C.
+
+**Resposta esperada (com Gemini):**
+
+    ☀️ Faz 25°C em Salvador — um clima agradável hoje!
 
 ------------------------------------------------------------------------
 
