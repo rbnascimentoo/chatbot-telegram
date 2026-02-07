@@ -12,7 +12,7 @@
       "typeVersion": 1.2,
       "position": [
         -448,
-        -48
+        -176
       ],
       "id": "6068a202-1f5a-4e39-854e-6e917ed6bd2b",
       "name": "Telegram Trigger",
@@ -26,12 +26,77 @@
     },
     {
       "parameters": {
+        "content": "## WeatherBot\nEste projeto implementa um chatbot no Telegram que retorna a temperatura atual de qualquer cidade.\n",
+        "height": 512,
+        "width": 2304
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -400
+      ],
+      "id": "77000f79-d757-4353-91fb-27643aed2f28",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Reescreva a mensagem abaixo de forma mais natural e amigável em português:\n{{ $json.message }}\n\nRetorne SOMENTE um JSON nesse formato:\n{\"message\":\"texto final\",\"ok\":true}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        -272
+      ],
+      "id": "69c08d87-1e71-457d-b4ee-18f132e9f172",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "l0nupQyOiRMvp66f",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const temp = Math.round($json.main.temp);\nconst cidade = $json.name;\n\nreturn [{\n  json: {\n    message: `🌤️ A temperatura em ${cidade} é de ${temp}°C.`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -272
+      ],
+      "id": "d34d8c61-42d9-4efd-9da1-463a4c960a40",
+      "name": "Code in JavaScript",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
         "assignments": {
           "assignments": [
             {
               "id": "68c7538b-2c21-4a2c-af63-9b18f92126d2",
               "name": "queue",
-              "value": "={{ $json.message.text.toLowerCase().normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\")\n   .trim() }}",
+              "value": "={{ \n//função para normalizar as informações passadas pelo usuário\n(() => {\n  let txt = $json[\"message\"][\"text\"]\n    .toLowerCase()\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\")\n    .trim();\n\n  // Se já tem BR no final, mantém\n  if (txt.endsWith(\",br\")) return txt;\n\n  // Se tem cidade,uf -> transforma em cidade,uf,br\n  if (txt.includes(\",\")) {\n    return txt + \",br\";\n  }\n\n  return txt;\n})()\n}}",
               "type": "string"
             }
           ]
@@ -41,11 +106,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -240,
-        -48
+        -224,
+        -176
       ],
       "id": "d50f3155-65b0-4311-9fe9-3f134e8c4e9b",
-      "name": "Edit Fields"
+      "name": "Normalização de entrada (Edit Fields)"
     },
     {
       "parameters": {
@@ -55,7 +120,7 @@
           "parameters": [
             {
               "name": "appid",
-              "value": "=1b5c62c7a32bc766155be368874e972c"
+              "value": "={{ $env.OPENWEATHER_API_KEY }}"
             },
             {
               "name": "units",
@@ -85,11 +150,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -32,
-        -48
+        0,
+        -176
       ],
       "id": "fdf06fbf-4295-48e9-8383-8a0128b5ac06",
-      "name": "HTTP Request"
+      "name": "OpenWeather com HTTP Request",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -102,12 +168,13 @@
           },
           "conditions": [
             {
-              "id": "57eadfe6-4b5a-4567-900c-fdbcef94a5ef",
-              "leftValue": "={{ $json.cod }}",
-              "rightValue": 200,
+              "id": "ece165a1-c160-4a47-b5fd-e34dbc07199b",
+              "leftValue": "={{$json.cod == 200 && $json.main.temp != undefined }}",
+              "rightValue": "true",
               "operator": {
-                "type": "number",
-                "operation": "equals"
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
               }
             }
           ],
@@ -118,26 +185,62 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        176,
-        -48
+        224,
+        -176
       ],
-      "id": "ddec345b-cb0c-470a-a201-29002e60458f",
-      "name": "If"
+      "id": "a9bcfa78-6626-4df7-aa4a-ba87f46a4472",
+      "name": "IF para validação"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "889ad9f3-d6e5-4c7b-92d6-57360f49bdb1",
+              "leftValue": "={{ $json.message != undefined && $json.ok == true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1232,
+        -336
+      ],
+      "id": "b3cbf122-f4d8-4755-aa1b-6f0a711c8fe3",
+      "name": "If para validação do Gemini"
     },
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
         "text": "❌ Cidade não encontrada. Use o formato Cidade,UF (ex.: São Paulo,SP).",
-        "additionalFields": {}
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        384,
-        48
+        448,
+        -80
       ],
       "id": "9328135a-ee88-4e96-b3b6-7856fa644d75",
-      "name": "Send a text message",
+      "name": "Envia mensagem padrão de erro",
       "webhookId": "12f986db-a0bd-432e-a0e0-1d112a6f9c5d",
       "credentials": {
         "telegramApi": {
@@ -149,18 +252,18 @@
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "=🌤️ A temperatura em {{ $('Edit Fields').item.json.queue }} é de {{ $json.main.temp.round() }} °C.",
+        "text": "={{ $('Code in JavaScript').item.json.message }}",
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        384,
+        1472,
         -112
       ],
-      "id": "f6928d4e-dc35-49f0-9a56-023d5a041bec",
-      "name": "Send a text message1",
-      "webhookId": "82e65c2d-b531-440e-8692-521a1669acb4",
+      "id": "9b5f60de-5b26-4882-8c22-d0de5fb65ea2",
+      "name": "Envia mensagem fallback",
+      "webhookId": "680207c2-6000-4917-a5fe-406c96f78d21",
       "credentials": {
         "telegramApi": {
           "id": "UqKxBKsqGVMMlGoo",
@@ -170,18 +273,43 @@
     },
     {
       "parameters": {
-        "content": "## WeatherBot\nEste projeto implementa um chatbot no Telegram que retorna a temperatura atual de qualquer cidade.\n",
-        "height": 480,
-        "width": 1712
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
       "position": [
-        -784,
-        -208
+        1456,
+        -336
       ],
-      "id": "77000f79-d757-4353-91fb-27643aed2f28",
-      "name": "Sticky Note"
+      "id": "f6928d4e-dc35-49f0-9a56-023d5a041bec",
+      "name": "Envia mensagem refinada pelo gemini",
+      "webhookId": "82e65c2d-b531-440e-8692-521a1669acb4",
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "UqKxBKsqGVMMlGoo",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ \nJSON.parse(\n  $json.content.parts[0].text\n    .replace(\"```json\",\"\")\n    .replace(\"```\",\"\")\n)\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        -320
+      ],
+      "id": "f49267de-21fa-4dc1-958f-03fc7dba551a",
+      "name": "Transforma o json"
     }
   ],
   "pinData": {},
@@ -190,47 +318,110 @@
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "Normalização de entrada (Edit Fields)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Edit Fields": {
+    "Message a model": {
       "main": [
         [
           {
-            "node": "HTTP Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "HTTP Request": {
-      "main": [
-        [
-          {
-            "node": "If",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If": {
-      "main": [
-        [
-          {
-            "node": "Send a text message1",
+            "node": "Transforma o json",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Send a text message",
+            "node": "Envia mensagem fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalização de entrada (Edit Fields)": {
+      "main": [
+        [
+          {
+            "node": "OpenWeather com HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenWeather com HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "IF para validação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF para validação": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Envia mensagem padrão de erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If para validação do Gemini": {
+      "main": [
+        [
+          {
+            "node": "Envia mensagem refinada pelo gemini",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Envia mensagem fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envia mensagem padrão de erro": {
+      "main": [
+        []
+      ]
+    },
+    "Transforma o json": {
+      "main": [
+        [
+          {
+            "node": "If para validação do Gemini",
             "type": "main",
             "index": 0
           }
@@ -238,12 +429,15 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "binaryMode": "separate"
   },
-  "versionId": "814f50fa-e55d-4798-b1d3-fe4b5637641d",
+  "versionId": "eefb7402-a6a4-42c1-ba98-91a054e462da",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a91fe63433c0e6551719e32d44f2fb319c05313a5f9a8218f5d0fe426eaab482"
