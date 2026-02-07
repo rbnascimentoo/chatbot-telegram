@@ -13,18 +13,18 @@ Este projeto implementa um chatbot no Telegram que retorna a temperatura atual d
 
 O workflow segue o fluxo abaixo:
 
-1.  **Telegram Trigger** -- recebe a mensagem do usuário.\
+1.  **Telegram Trigger** -- recebe a mensagem do usuário.
 2.  **Normalização de entrada (Edit Fields)** -- limpa texto, remove
-    acentos e padroniza a cidade.\
-3.  **HTTP Request → OpenWeather** -- consulta a API de clima.\
+    acentos e padroniza a cidade.
+3.  **HTTP Request → OpenWeather** -- consulta a API de clima.
 4.  **IF (validação 200)** -- separa sucesso de erro.\
-5.  **Function (fallback determinístico)** -- monta a mensagem base.\
+5.  **Function (fallback determinístico)** -- monta a mensagem base.
 6.  **Google Gemini (opcional)** -- reescreve a mensagem de forma mais
-    natural.\
+    natural.
 7.  **Set (limpeza da saída do Gemini)** -- converte o JSON retornado
-    pelo Gemini para objeto utilizável.\
+    pelo Gemini para objeto utilizável.
 8.  **IF (validação do Gemini)** -- decide entre resposta refinada ou
-    fallback.\
+    fallback.
 9.  **Telegram Send Message** -- envia a resposta final ao usuário.
 
 ### Diagrama do workflow
@@ -72,8 +72,8 @@ No N8N (ou Docker), defina:
 
 ### 2) Telegram
 
-1.  No Telegram, abra **@BotFather** e crie um bot com `/newbot`.\
-2.  Copie o token gerado.\
+1.  No Telegram, abra **@BotFather** e crie um bot com `/newbot`.
+2.  Copie o token gerado.
 3.  No N8N, crie uma credencial do tipo **Telegram Bot API** e cole o
     token.
 
